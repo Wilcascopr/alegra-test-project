@@ -1,0 +1,92 @@
+{
+    "queues": [
+        {
+            "name": "order_queue",
+            "vhost": "/my_vhost",
+            "durable": true,
+            "arguments": {
+                "x-dead-letter-exchange": "",
+                "x-dead-letter-routing-key": "order.dead"
+            }
+        },
+        {
+            "name": "event_queue",
+            "vhost": "/my_vhost",
+            "durable": true
+        },
+        {
+            "name": "ingredients_queue",
+            "vhost": "/my_vhost",
+            "durable": true
+        }
+    ],
+    "exchanges": [
+        {
+            "name": "order_exchange",
+            "vhost": "/",
+            "type": "direct",
+            "durable": true
+        },
+        {
+            "name": "event_exchange",
+            "vhost": "/",
+            "type": "topic",
+            "durable": true
+        }
+    ],
+    "bindings": [
+        {
+            "source": "order_exchange",
+            "vhost": "/",
+            "destination": "order_queue",
+            "destination_type": "queue",
+            "routing_key": "order.requested"
+        },
+        {
+            "source": "event_exchange",
+            "vhost": "/",
+            "destination": "event_queue",
+            "destination_type": "queue",
+            "routing_key": "order.ready"
+        },
+        {
+            "source": "event_exchange",
+            "vhost": "/",
+            "destination": "event_queue",
+            "destination_type": "queue",
+            "routing_key": "order.preparing"
+        },
+        {
+            "source": "event_exchange",
+            "vhost": "/",
+            "destination": "ingredients_queue",
+            "destination_type": "queue",
+            "routing_key": "ingredients.ready"
+        }
+    ],
+    "users": [
+        {
+            "name": "guest",
+            "password_hash": "BMfxN8drrYcIqXZMr+pWTpDT0nMcOagMduLX0bjr4jwud/pN",
+            "hashing_algorithm": "rabbit_password_hashing_sha256",
+            "tags": [
+                "administrator"
+            ],
+            "limits": {}
+        }
+    ],
+    "vhosts": [
+        {
+            "name": "/"
+        }
+    ],
+    "permissions": [
+        {
+            "user": "guest",
+            "vhost": "/",
+            "configure": ".*",
+            "write": ".*",
+            "read": ".*"
+        }
+    ]
+}

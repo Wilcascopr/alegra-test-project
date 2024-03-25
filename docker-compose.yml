@@ -1,0 +1,44 @@
+version: '3.6'
+
+networks:
+  rabbitmq-alegra:
+    driver: bridge
+
+services:
+  rabbitmq:
+    image: 'rabbitmq:3-management'
+    networks:
+      - rabbitmq-alegra
+    ports:
+      - "8090:15672" # Port to access RabbitMQ management
+    volumes:
+      - ./rabbit-init/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf # Custom RabbitMQ configuration
+      - ./rabbit-init/definitions.json:/etc/rabbitmq/definitions.json # Custom RabbitMQ definitions
+  gateway:
+    build: ./gateway
+    ports:
+      - "8080:80" # Port to access our REST API
+    networks:
+      - rabbitmq-alegra
+    depends_on:
+      - rabbitmq
+    environment: # Sample env variables for producer
+      RABBITMQ_HOST: "rabbitmq"
+      INVENTORY_SERVICE: "inventory"
+      KITCHEN_SERVICE: "kitchen"
+  inventory:
+    build: ./inventory
+    networks:
+      - rabbitmq-alegra
+    depends_on:
+      - rabbitmq
+    environment: # Sample env variables for consumer
+      RABBITMQ_HOST: "rabbitmq"
+  kitchen:
+    build: ./kitchen
+    networks:
+      - rabbitmq-alegra
+    depends_on:
+      - rabbitmq
+    environment: # Sample env variables for consumer
+      RABBITMQ_HOST: "rabbitmq"
