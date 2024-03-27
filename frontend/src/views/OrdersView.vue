@@ -1,5 +1,5 @@
 <script setup>
-import { reactive, ref } from 'vue';
+import { reactive, ref, watch } from 'vue';
 import { getOrders } from '@/services/api/backend.js'
 import AlertMessage from '@/components/AlertMessage.vue'
 import Menu from '@/components/MenuComponent.vue'
@@ -28,7 +28,6 @@ const getOrdersClient = async () => {
     loader.value = true
     try {
         const { data } = await getOrders(paginator.page)
-        console.log(data)
         orders.value = data.data.map(order => ({
             id: order.id,
             status: order.status,
@@ -39,13 +38,16 @@ const getOrdersClient = async () => {
         paginator.lastPage = data.last_page
         paginator.page = data.current_page
     } catch (error) {
-        alert.message = 'Error al obtener los documentos'
+        alert.message = 'An error occurred while trying to fetch the orders'
         alert.alertType = 'error'
         alert.value = true
     } finally {
         loader.value = false
     }
 }
+watch(paginator, () => {
+    getOrdersClient()
+})
 getOrdersClient()
 </script>
 
@@ -101,7 +103,6 @@ getOrdersClient()
                 v-if="orders.length"
                 v-model="paginator.page"
                 :length="paginator.lastPage"
-                @input="getOrdersClient"
             />
             <Loader v-else-if="loader" />
             <div v-else>

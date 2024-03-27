@@ -56,7 +56,7 @@ class InventoryService
                 if ($needsPurchase) dispatch(new PurchaseIngredientJob([
                         'id' => $item['id'],
                         'name' => $name,
-                        'quantity' => ($item['quantity_needed'] - $item['current_quantity']) * 2
+                        'quantity' => abs($item['quantity_needed'] - $item['current_quantity']) * 2
                     ]));
             }
             DB::commit();
@@ -90,7 +90,7 @@ class InventoryService
               ];
               continue;
           }
-          $ingredientsPurchase[$ingredient->name]['quantity_needed'] += $amount;
+          $ingredientsPurchase[$ingredient->name]['quantity_needed'] += $amountInner;
       }
     }
 }

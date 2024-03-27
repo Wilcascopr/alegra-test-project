@@ -27,7 +27,7 @@ const getRandomDishes = async () => {
     } catch (error) {
         alert.value = true
         alert.alertType = 'error'
-        alert.message = 'Error al obtener los platos aleatorios'
+        alert.message = 'There was an error selecting the random dishes for the order'
         setTimeout(() => {
             alert.value = false
         }, 3000)

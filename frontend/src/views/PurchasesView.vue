@@ -38,7 +38,7 @@ const getPurchasesClient = async () => {
         paginator.lastPage = data.last_page
         paginator.page = data.current_page
     } catch (error) {
-        alert.message = 'Error al obtener los documentos'
+        alert.message = 'An error occurred while trying to fetch the purchases'
         alert.alertType = 'error'
         alert.value = true
     } finally {
@@ -70,6 +70,9 @@ watch(ingredientFilter, (newVal, oldVal) => {
         getPurchasesClient()
         return;
     }
+})
+watch(paginator, () => {
+    getPurchasesClient()
 })
 getIngredientsClient();
 getPurchasesClient();
@@ -123,7 +126,6 @@ getPurchasesClient();
                 v-if="purchases.length"
                 v-model="paginator.page"
                 :length="paginator.lastPage"
-                @input="getPurchasesClient"
             />
             <Loader v-else-if="loader"/>
             <div v-else>

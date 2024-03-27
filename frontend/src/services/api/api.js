@@ -1,8 +1,7 @@
 import axios from 'axios';
-import process from 'process';
 
 const api = axios.create({
-  baseURL: process.env.BACKEND_URL || 'http://localhost:8080',
+  baseURL: `${import.meta.env.VITE_BACKEND_URL}:${import.meta.env.VITE_BACKEND_PORT}` || 'http://localhost:8080',
 });
 
 export default api;

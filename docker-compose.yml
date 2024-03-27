@@ -10,27 +10,27 @@ services:
     networks:
       - rabbitmq-alegra
     ports:
-      - "8090:15672" # Port to access RabbitMQ management
+      - "8090:15672"
     volumes:
       - ./rabbit-init/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf # Custom RabbitMQ configuration
       - ./rabbit-init/definitions.json:/etc/rabbitmq/definitions.json # Custom RabbitMQ definitions
   gateway:
     build: ./gateway
     ports:
-      - "8080:80" # Port to access our REST API
+      - "8080:80"
     networks:
       - rabbitmq-alegra
     depends_on:
       rabbitmq:
         condition: service_started
-    environment: # Sample env variables for producer
+    environment:
       RABBITMQ_HOST: "rabbitmq"
       INVENTORY_SERVICE: "inventory"
       KITCHEN_SERVICE: "kitchen"
   frontend:
     build: ./frontend
     ports:
-      - "3000:80" # Port to access our frontend
+      - "3000:80"
     networks:
       - rabbitmq-alegra
     depends_on:
@@ -40,6 +40,9 @@ services:
         condition: service_started
       kitchen:
         condition: service_started
+    environment:
+      VITE_BACKEND_URL: "gateway"
+      VITE_BACKEND_PORT: "8080"
   inventory:
     build: ./inventory-management
     networks:
@@ -47,7 +50,7 @@ services:
     depends_on:
       rabbitmq:
         condition: service_started
-    environment: # Sample env variables for consumer
+    environment:
       RABBITMQ_HOST: "rabbitmq"
   kitchen:
     build: ./kitchen
@@ -56,5 +59,5 @@ services:
     depends_on:
       rabbitmq:
         condition: service_started
-    environment: # Sample env variables for consumer
+    environment:
       RABBITMQ_HOST: "rabbitmq"

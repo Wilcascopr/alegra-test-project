@@ -1,4 +1,8 @@
 <script setup>
+import { ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
+const route = useRoute();
+const currentRoute = ref(route.name);
 const routes = [
     {
         path: '/orders',
@@ -21,6 +25,9 @@ const routes = [
         name: 'Create Order'
     },
 ];
+watch(() => route.name, (newVal) => {
+    currentRoute.value = newVal;
+});
 </script>
 
 <template>
@@ -30,5 +37,9 @@ const routes = [
         </v-btn>
     </v-app-bar>
     <div style="margin-bottom: 84px;" />
+    <div v-if="currentRoute == 'home'" style="text-align: center;">
+        <h1>Welcome to the Home Page</h1>
+        <h2>Lunch Day Free! Project</h2>
+    </div>
     <router-view></router-view>
 </template>
