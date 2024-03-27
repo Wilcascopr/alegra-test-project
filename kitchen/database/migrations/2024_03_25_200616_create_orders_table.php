@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
-            $table->enum('status', ['preparing', 'delivered']);
+            $table->enum('status', ['received', 'preparing', 'delivered']);
             $table->timestamps();
         });
 
@@ -22,7 +22,6 @@ return new class extends Migration
             $table->foreignId('order_id')->constrained('orders');
             $table->foreignId('recipe_id')->constrained('recipes');
             $table->integer('quantity');
-            $table->enum('status', ['pending', 'ready']);
         });
     }
 

@@ -15,6 +15,7 @@ class Recipe extends Model
 
     public function ingredients()
     {
-        return $this->hasManyThrough(Ingredient::class, 'recipe_ingredients', 'recipe_id', 'id', 'id', 'ingredient_id');
+        return $this->belongsToMany(Ingredient::class, 'recipe_ingredients', 'recipe_id', 'ingredient_id')
+            ->withPivot('quantity', 'recipe_id', 'ingredient_id');
     }
 }
