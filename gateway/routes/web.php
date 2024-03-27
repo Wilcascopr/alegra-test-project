@@ -13,6 +13,10 @@
 |
 */
 
-$router->get('/', function () use ($router) {
-    return $router->app->version();
-});
+$router->get('/random-recipe', 'GatewayController@getRandomRecipes');
+$router->get('/recipes', 'GatewayController@getRecipes');
+$router->get('/orders', 'GatewayController@getOrders');
+$router->get('/orders/{id}', 'GatewayController@getOrder');
+$router->get('/purchases', 'GatewayController@getPurchases');
+$router->get('/ingredients', 'GatewayController@getIngredients');
+$router->post('/orders', 'GatewayController@createOrder');

@@ -13,6 +13,8 @@
 |
 */
 
-$router->get('/', function () use ($router) {
-    return $router->app->version();
-});
+$router->get('/recipes', 'KitchenController@getRecipes');
+$router->post('/empty-order', 'KitchenController@createEmptyOrder');
+$router->get('/orders', 'KitchenController@getOrders');
+$router->get('/orders/{id}', 'KitchenController@getOrder');
+$router->get('/random-recipes', 'KitchenController@getRandomRecipes');

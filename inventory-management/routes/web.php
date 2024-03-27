@@ -13,6 +13,5 @@
 |
 */
 
-$router->get('/', function () use ($router) {
-    return $router->app->version();
-});
+$router->get('/ingredients', 'InventoryController@getIngredients');
+$router->get('/purchases', 'InventoryController@getPurchases');

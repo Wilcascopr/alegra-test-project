@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
+use PhpAmqpLib\Connection\AMQPStreamConnection;
 
 class RabbitMQService
 {
@@ -12,7 +12,8 @@ class RabbitMQService
     public $callbackConsumer;
 
     const ORDER_EXCHANGE_REQUESTED = [
-        'queue' => 'order_queue',
+        'queue' => 'order_queue_kitchen',
+        'exchange' => 'order_exchange',
         'routing_key' => 'order.requested',
     ];
 
@@ -33,7 +34,7 @@ class RabbitMQService
         );
         $channel = $connection->channel();
         $msg = new AMQPMessage($message);
-        $channel->basic_publish($msg, $exchange['queue'], $exchange['routing_key']);
+        $channel->basic_publish($msg, $exchange['exchange'], $exchange['routing_key']);
         $channel->close();
         $connection->close();
     }
@@ -60,7 +61,8 @@ class RabbitMQService
     public function setCallbackConsumer()
     {
         $this->callbackConsumer = function ($message) {
-            echo '[' . $this->queue . '] ' . ' Received ' . $message->getBody() . PHP_EOL;
+            echo " [". $this->queue ."] Received ", $message->getBody(), "\n";
+            // Log::info("message received from queue", ["message" => $message->getBody()]);
         };
     }
 
