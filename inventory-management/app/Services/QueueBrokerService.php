@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Log;
+
 class QueueBrokerService 
 {
 
@@ -14,13 +16,13 @@ class QueueBrokerService
 
     public function publish($message, $exchange)
     {
-        echo " [x] Sent $message to $exchange[queue] / $exchange[routing_key] " . PHP_EOL; 
+        echo "Publishing message to exchange:", json_encode($exchange), $message, " \n";
         $this->queueServiceProvider->publish($message, $exchange);
     }
 
     public function consume($queue = null)
     {
-        echo 'Waiting for new message on ' . $queue . PHP_EOL;
+        echo "Consuming messages from queue: $queue\n";
         $this->queueServiceProvider->consume($queue);
     }
 }

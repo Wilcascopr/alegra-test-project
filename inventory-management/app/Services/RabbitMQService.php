@@ -13,7 +13,14 @@ class RabbitMQService
 
     const INGREDIENTS_EXCHANGE_READY = [
         'queue' => 'ingredients_queue',
+        'exchange' => 'event_exchange',
         'routing_key' => 'ingredients.ready',
+    ];
+
+    const INGREDIENTS_EXCHANGE_RETRY = [
+        'queue' => 'ingredients_queue_retry',
+        'exchange' => 'event_exchange',
+        'routing_key' => 'ingredients.check_retry',
     ];
 
     public function __construct()
@@ -33,7 +40,7 @@ class RabbitMQService
         );
         $channel = $connection->channel();
         $msg = new AMQPMessage($message);
-        $channel->basic_publish($msg, $exchange['queue'], $exchange['routing_key']);
+        $channel->basic_publish($msg, $exchange['exchange'], $exchange['routing_key']);
         $channel->close();
         $connection->close();
     }
@@ -60,7 +67,8 @@ class RabbitMQService
     public function setCallbackConsumer()
     {
         $this->callbackConsumer = function ($message) {
-            echo '[' . $this->queue . '] ' . ' Received ' . $message->getBody() . PHP_EOL;
+            echo ' ['. $this->queue .'] Received ', $message->getBody(), "\n";
+            InventoryService::checkOrderIngredients($message->getBody());
         };
     }
 

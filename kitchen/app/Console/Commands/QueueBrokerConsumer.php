@@ -13,7 +13,7 @@ class QueueBrokerConsumer extends Command
      *
      * @var string
      */
-    protected $signature = 'queue_broker:consume {queue}';
+    protected $signature = 'queuebroker:consume {queue}';
 
     /**
      * The console command description.

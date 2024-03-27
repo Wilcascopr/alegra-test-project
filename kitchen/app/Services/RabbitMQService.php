@@ -9,16 +9,30 @@ class RabbitMQService
 {
     private $credentials;
     private $queue;
-    public $callbackConsumer;
 
+    public $callbackConsumer;
     const EVENT_EXCHANGE_PREPARING = [
         'queue' => 'event_queue',
+        'exchange' => 'event_exchange',
         'routing_key' => 'order.preparing',
     ];
 
     const EVENT_EXCHANGE_READY = [
         'queue' => 'event_queue',
+        'exchange' => 'event_exchange',
         'routing_key' => 'order.ready',
+    ];
+
+    const EVENT_EXCHANGE_INGREDIENTS = [
+        'queue' => 'ingredients_queue',
+        'exchange' => 'event_exchange',
+        'routing_key' => 'ingredients.ready',
+    ];
+
+    const ORDER_EXCHANGE_REQUEST = [
+        'queue' => 'order_queue_kitchen',
+        'exchange' => 'order_exchange',
+        'routing_key' => 'order.requested',
     ];
 
     public function __construct()
@@ -38,7 +52,7 @@ class RabbitMQService
         );
         $channel = $connection->channel();
         $msg = new AMQPMessage($message);
-        $channel->basic_publish($msg, $exchange['queue'], $exchange['routing_key']);
+        $channel->basic_publish($msg, $exchange['exchange'], $exchange['routing_key']);
         $channel->close();
         $connection->close();
     }
@@ -65,7 +79,12 @@ class RabbitMQService
     public function setCallbackConsumer()
     {
         $this->callbackConsumer = function ($message) {
-            echo '[' . $this->queue . '] ' . ' Received ' . $message->getBody() . PHP_EOL;
+            echo ' ['. $this->queue .'] Received ', $message->getBody(), "\n";
+            match ($this->queue) {
+                self::ORDER_EXCHANGE_REQUEST['queue'] => KitchenService::addOrder($message->getBody()),
+                self::EVENT_EXCHANGE_INGREDIENTS['queue'] => KitchenService::cookOrder($message->getBody()),
+                default => null,
+            };
         };
     }
 
