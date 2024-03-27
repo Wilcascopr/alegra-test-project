@@ -10,9 +10,13 @@ use Illuminate\Support\Facades\DB;
 class KitchenService
 {
 
+    static $orderStatusReceived = 'received';
+    static $orderStatusPreparing = 'preparing';
+    static $orderStatusDelivered = 'delivered';
+
     public function createEmptyOrder()
     {
-        $order = Order::create(['status' => 'received']);
+        $order = Order::create(['status' => self::$orderStatusReceived]);
         return $order->id;
     }
 
@@ -52,28 +56,48 @@ class KitchenService
     {
         $orderData = json_decode($data, true);
         $itemsInsert = [];
-        DB::beginTransaction();
-        foreach ($orderData['items'] as $item) {
-            $itemsInsert[] = [
-                'order_id' => $orderData['id'],
-                'recipe_id' => $item['recipe_id'],
-                'quantity' => $item['quantity']
-            ];
+        try {
+            DB::beginTransaction();
+            $order = Order::where('id', $orderData['id'])->with('items')->first();
+            $recipes = $order->items->pluck('recipe_id')->toArray();
+            foreach ($orderData['items'] as $item) {
+                if (in_array($item['recipe_id'], $recipes)) continue;
+                $itemsInsert[] = [
+                    'order_id' => $orderData['id'],
+                    'recipe_id' => $item['recipe_id'],
+                    'quantity' => $item['quantity']
+                ];
+            }
+            DB::table('order_items')->insert($itemsInsert);
+            if ($order->status === self::$orderStatusReceived) {
+                Order::where('id', $orderData['id'])->update(['status' => self::$orderStatusPreparing]);
+            }
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $queuebrokerService = new QueueBrokerService(new RabbitMQService);
+            $queuebrokerService->publish($data, RabbitMQService::ORDER_EXCHANGE_REQUEST_RETRY);
+            throw $e;
         }
-        DB::table('order_items')->insert($itemsInsert);
-        Order::where('id', $orderData['id'])->update(['status' => 'preparing']);
-        DB::commit();
     }
 
     static function cookOrder($data)
     {
-        $orderData = json_decode($data, true);
-        DB::beginTransaction();
-        foreach ($orderData['ingredients'] as $item) {
-            Ingredient::where('id', $item['id'])
-              ->update(['quantity' => DB::raw('quantity - ' . $item['quantity'])]);
+        try {
+            $orderData = json_decode($data, true);
+            DB::beginTransaction();
+            foreach ($orderData['ingredients'] as $item) {
+                Ingredient::where('id', $item['id'])
+                  ->update(['quantity' => DB::raw('quantity - ' . $item['quantity'])]);
+            }
+            Order::where('id', $orderData['id'])->update(['status' => self::$orderStatusDelivered]);
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $queuebrokerService = new QueueBrokerService(new RabbitMQService);
+            $queuebrokerService->publish($data, RabbitMQService::EVENT_EXCHANGE_INGREDIENTS);
+            throw $e;
         }
-        Order::where('id', $orderData['id'])->update(['status' => 'delivered']);
-        DB::commit();
+       
     }
 }

@@ -35,6 +35,12 @@ class RabbitMQService
         'routing_key' => 'order.requested',
     ];
 
+    const ORDER_EXCHANGE_REQUEST_RETRY = [
+        'queue' => 'order_queue_kitchen',
+        'exchange' => 'event_exchange',
+        'routing_key' => 'order.requested_retry',
+    ];
+
     public function __construct()
     {
         $this->credentials = $this->getCredentials();

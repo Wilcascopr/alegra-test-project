@@ -30,46 +30,52 @@ class InventoryService
 
     static function checkOrderIngredients($orderData, $attemptsCheckIngredients = 0)
     {
-        $attemptsCheckIngredients++;
-        $order = json_decode($orderData, true);
-        $itemsForCheck = [];
-        $recipesIds = array_column($order['items'], 'recipe_id');
-        DB::beginTransaction();
-        $recipes = Recipe::with('ingredients')->whereIn('id', $recipesIds)->get();
-        $itemsForCheck = array_column($order['items'], 'quantity', 'recipe_id');
-        $needsPurchase = false;
-        $ingredientsPurchase = [];
-        foreach ($recipes as $recipe) {
-            self::checkRecipe($recipe->ingredients, $itemsForCheck[$recipe->id], $ingredientsPurchase);
-        }
-        $cookData = [
-            'id' => $order['id'],
-            'ingredients' => []
-        ];
-        foreach ($ingredientsPurchase as $name => $item) {
-            $cookData['ingredients'][] = [
-                'id' => $item['id'],
-                'quantity' => $item['quantity_needed']
+        try {
+            $attemptsCheckIngredients++;
+            $order = json_decode($orderData, true);
+            $itemsForCheck = [];
+            $recipesIds = array_column($order['items'], 'recipe_id');
+            DB::beginTransaction();
+            $recipes = Recipe::with('ingredients')->whereIn('id', $recipesIds)->get();
+            $itemsForCheck = array_column($order['items'], 'quantity', 'recipe_id');
+            $needsPurchase = false;
+            $ingredientsPurchase = [];
+            foreach ($recipes as $recipe) {
+                self::checkRecipe($recipe->ingredients, $itemsForCheck[$recipe->id], $ingredientsPurchase);
+            }
+            $cookData = [
+                'id' => $order['id'],
+                'ingredients' => []
             ];
-            $needsPurchase = $item['quantity_needed'] > $item['current_quantity'];
-            if ($needsPurchase) dispatch(new PurchaseIngredientJob([
+            foreach ($ingredientsPurchase as $name => $item) {
+                $cookData['ingredients'][] = [
                     'id' => $item['id'],
-                    'name' => $name,
-                    'quantity' => ($item['quantity_needed'] - $item['current_quantity']) * 2
-                ]));
+                    'quantity' => $item['quantity_needed']
+                ];
+                $needsPurchase = $item['quantity_needed'] > $item['current_quantity'];
+                if ($needsPurchase) dispatch(new PurchaseIngredientJob([
+                        'id' => $item['id'],
+                        'name' => $name,
+                        'quantity' => ($item['quantity_needed'] - $item['current_quantity']) * 2
+                    ]));
+            }
+            DB::commit();
+            if (is_null(self::$queueBrokerService)) self::$queueBrokerService = new QueueBrokerService(new RabbitMQService());
+            if (!$needsPurchase) {
+                self::$queueBrokerService->publish(json_encode($cookData), RabbitMQService::INGREDIENTS_EXCHANGE_READY);
+                return;
+            }
+            sleep(15);
+            if ($attemptsCheckIngredients < self::$maxAttemptsCheckIngredients) {
+                self::checkOrderIngredients($orderData, $attemptsCheckIngredients);
+                return;
+            }
+        } catch (\Exception $e) {
+            DB::rollBack();
+            if (is_null(self::$queueBrokerService)) self::$queueBrokerService = new QueueBrokerService(new RabbitMQService());
+            self::$queueBrokerService->publish($orderData, RabbitMQService::INGREDIENTS_EXCHANGE_RETRY);
+            throw $e;
         }
-        DB::commit();
-        if (is_null(self::$queueBrokerService)) self::$queueBrokerService = new QueueBrokerService(new RabbitMQService());
-        if (!$needsPurchase) {
-            self::$queueBrokerService->publish(json_encode($cookData), RabbitMQService::INGREDIENTS_EXCHANGE_READY);
-            return;
-        }
-        sleep(15);
-        if ($attemptsCheckIngredients < self::$maxAttemptsCheckIngredients) {
-            self::checkOrderIngredients($orderData, $attemptsCheckIngredients);
-            return;
-        }
-        self::$queueBrokerService->publish($orderData, RabbitMQService::INGREDIENTS_EXCHANGE_RETRY);
     }
 
     private static function checkRecipe($recipeIngredients, $amount, &$ingredientsPurchase)

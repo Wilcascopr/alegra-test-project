@@ -27,6 +27,19 @@ services:
       RABBITMQ_HOST: "rabbitmq"
       INVENTORY_SERVICE: "inventory"
       KITCHEN_SERVICE: "kitchen"
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80" # Port to access our frontend
+    networks:
+      - rabbitmq-alegra
+    depends_on:
+      gateway:
+        condition: service_started
+      inventory:
+        condition: service_started
+      kitchen:
+        condition: service_started
   inventory:
     build: ./inventory-management
     networks:

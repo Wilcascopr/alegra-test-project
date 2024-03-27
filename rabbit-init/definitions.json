@@ -22,11 +22,6 @@
             "name": "ingredients_queue",
             "vhost": "/",
             "durable": true
-        },
-        {
-            "name": "ingredients_queue_retry",
-            "vhost": "/",
-            "durable": true
         }
     ],
     "exchanges": [
@@ -45,39 +40,25 @@
     ],
     "bindings": [
         {
+            "source": "order_exchange",
+            "vhost": "/",
+            "destination": "order_queue_kitchen",
+            "destination_type": "queue",
+            "routing_key": "order.requested"
+        },
+        {
+            "source": "order_exchange",
+            "vhost": "/",
+            "destination": "order_queue_inventory",
+            "destination_type": "queue",
+            "routing_key": "order.requested"
+        },
+        {
             "source": "event_exchange",
             "vhost": "/",
-            "destination": "ingredients_queue_retry",
+            "destination": "order_queue_inventory",
             "destination_type": "queue",
             "routing_key": "order.check_retry"
-        },
-        {
-            "source": "order_exchange",
-            "vhost": "/",
-            "destination": "order_queue_kitchen",
-            "destination_type": "queue",
-            "routing_key": "order.requested"
-        },
-        {
-            "source": "order_exchange",
-            "vhost": "/",
-            "destination": "order_queue_inventory",
-            "destination_type": "queue",
-            "routing_key": "order.requested"
-        },
-        {
-            "source": "order_exchange",
-            "vhost": "/",
-            "destination": "order_queue_kitchen",
-            "destination_type": "queue",
-            "routing_key": "order.retry"
-        },
-        {
-            "source": "order_exchange",
-            "vhost": "/",
-            "destination": "order_queue_inventory",
-            "destination_type": "queue",
-            "routing_key": "order.retry"
         },
         {
             "source": "order_exchange",
@@ -99,6 +80,13 @@
             "destination": "ingredients_queue",
             "destination_type": "queue",
             "routing_key": "ingredients.ready"
+        },
+        {
+            "source": "event_exchange",
+            "vhost": "/",
+            "destination": "order_queue_kitchen",
+            "destination_type": "queue",
+            "routing_key": "order.requested_retry"
         }
     ],
     "users": [

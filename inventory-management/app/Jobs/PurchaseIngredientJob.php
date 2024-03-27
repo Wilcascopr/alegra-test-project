@@ -55,7 +55,14 @@ class PurchaseIngredientJob extends Job
             usleep($waitTime);
             $totalWait += $waitTime;
         }
-        Purchase::insert($purchaseInsert);
+        try {
+            DB::beginTransaction();
+            Purchase::insert($purchaseInsert);
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
         if ($this->totalPurchased < $this->data['quantity']) {
             dispatch(new PurchaseIngredientJob([
                 'id' => $this->data['id'],
@@ -82,9 +89,15 @@ class PurchaseIngredientJob extends Job
 
     private function updateIngredientQuantity()
     {
-        DB::beginTransaction();
-        Ingredient::where('id', $this->data['id'])
-          ->update(['quantity' => DB::raw('quantity + ' . $this->totalPurchased)]);
-        DB::commit();
+        try {
+            DB::beginTransaction();
+            Ingredient::where('id', $this->data['id'])
+                ->update(['quantity' => DB::raw('quantity + ' . $this->totalPurchased)]);
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
     }
+
 }
