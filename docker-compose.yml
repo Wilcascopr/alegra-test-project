@@ -21,17 +21,19 @@ services:
     networks:
       - rabbitmq-alegra
     depends_on:
-      - rabbitmq
+      rabbitmq:
+        condition: service_started
     environment: # Sample env variables for producer
       RABBITMQ_HOST: "rabbitmq"
       INVENTORY_SERVICE: "inventory"
       KITCHEN_SERVICE: "kitchen"
   inventory:
-    build: ./inventory
+    build: ./inventory-management
     networks:
       - rabbitmq-alegra
     depends_on:
-      - rabbitmq
+      rabbitmq:
+        condition: service_started
     environment: # Sample env variables for consumer
       RABBITMQ_HOST: "rabbitmq"
   kitchen:
@@ -39,6 +41,7 @@ services:
     networks:
       - rabbitmq-alegra
     depends_on:
-      - rabbitmq
+      rabbitmq:
+        condition: service_started
     environment: # Sample env variables for consumer
       RABBITMQ_HOST: "rabbitmq"

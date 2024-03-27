@@ -1,8 +1,8 @@
 {
     "queues": [
         {
-            "name": "order_queue",
-            "vhost": "/my_vhost",
+            "name": "order_queue_kitchen",
+            "vhost": "/",
             "durable": true,
             "arguments": {
                 "x-dead-letter-exchange": "",
@@ -10,13 +10,22 @@
             }
         },
         {
-            "name": "event_queue",
-            "vhost": "/my_vhost",
-            "durable": true
+            "name": "order_queue_inventory",
+            "vhost": "/",
+            "durable": true,
+            "arguments": {
+                "x-dead-letter-exchange": "",
+                "x-dead-letter-routing-key": "order.dead"
+            }
         },
         {
             "name": "ingredients_queue",
-            "vhost": "/my_vhost",
+            "vhost": "/",
+            "durable": true
+        },
+        {
+            "name": "ingredients_queue_retry",
+            "vhost": "/",
             "durable": true
         }
     ],
@@ -36,25 +45,53 @@
     ],
     "bindings": [
         {
+            "source": "event_exchange",
+            "vhost": "/",
+            "destination": "ingredients_queue_retry",
+            "destination_type": "queue",
+            "routing_key": "order.check_retry"
+        },
+        {
             "source": "order_exchange",
             "vhost": "/",
-            "destination": "order_queue",
+            "destination": "order_queue_kitchen",
             "destination_type": "queue",
             "routing_key": "order.requested"
         },
         {
-            "source": "event_exchange",
+            "source": "order_exchange",
             "vhost": "/",
-            "destination": "event_queue",
+            "destination": "order_queue_inventory",
             "destination_type": "queue",
-            "routing_key": "order.ready"
+            "routing_key": "order.requested"
         },
         {
-            "source": "event_exchange",
+            "source": "order_exchange",
             "vhost": "/",
-            "destination": "event_queue",
+            "destination": "order_queue_kitchen",
             "destination_type": "queue",
-            "routing_key": "order.preparing"
+            "routing_key": "order.retry"
+        },
+        {
+            "source": "order_exchange",
+            "vhost": "/",
+            "destination": "order_queue_inventory",
+            "destination_type": "queue",
+            "routing_key": "order.retry"
+        },
+        {
+            "source": "order_exchange",
+            "vhost": "/",
+            "destination": "order_queue_kitchen",
+            "destination_type": "queue",
+            "routing_key": "order.dead"
+        },
+        {
+            "source": "order_exchange",
+            "vhost": "/",
+            "destination": "order_queue_inventory",
+            "destination_type": "queue",
+            "routing_key": "order.dead"
         },
         {
             "source": "event_exchange",
