@@ -63,9 +63,6 @@ class KitchenService
         DB::table('order_items')->insert($itemsInsert);
         Order::where('id', $orderData['id'])->update(['status' => 'preparing']);
         DB::commit();
-        $orderDataEncoded = json_encode($orderData); 
-        $queueBrokerService = new QueueBrokerService(new RabbitMQService());
-        $queueBrokerService->publish($orderDataEncoded, RabbitMQService::EVENT_EXCHANGE_PREPARING);
     }
 
     static function cookOrder($data)
@@ -78,8 +75,5 @@ class KitchenService
         }
         Order::where('id', $orderData['id'])->update(['status' => 'delivered']);
         DB::commit();
-        $queueBrokerService = new QueueBrokerService(new RabbitMQService());
-        $orderDataEncoded = json_encode($orderData);
-        $queueBrokerService->publish($orderDataEncoded, RabbitMQService::EVENT_EXCHANGE_READY);
     }
 }
