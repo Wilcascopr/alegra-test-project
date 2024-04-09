@@ -44,6 +44,7 @@ class InventoryService
             foreach ($recipes as $recipe) {
                 self::checkRecipe($recipe->ingredients, $itemsForCheck[$recipe->id], $ingredientsPurchase);
             }
+            DB::commit();
             $cookData = [
                 'id' => $order['id'],
                 'ingredients' => []
@@ -54,14 +55,13 @@ class InventoryService
                     'id' => $item['id'],
                     'quantity' => $item['quantity_needed']
                 ];
-                $needsPurchase = $item['quantity_needed'] > $item['current_quantity'];
-                if ($needsPurchase) array_push($jobsBatch, new PurchaseIngredientJob([
+                if (!$needsPurchase) $needsPurchase = $item['quantity_needed'] > $item['current_quantity'];
+                if ($item['quantity_needed'] > $item['current_quantity']) $jobsBatch[] = new PurchaseIngredientJob([
                         'id' => $item['id'],
                         'name' => $name,
-                        'quantity' => abs($item['quantity_needed'] - $item['current_quantity']) * 2
-                    ]));
+                        'quantity' => abs($item['quantity_needed'] - $item['current_quantity'])
+                    ]);
             }
-            DB::commit();
             if (is_null(self::$queueBrokerService)) self::$queueBrokerService = new QueueBrokerService(new RabbitMQService());
             if (!$needsPurchase) {
                 self::$queueBrokerService->publish(json_encode($cookData), RabbitMQService::INGREDIENTS_EXCHANGE_READY);
@@ -77,7 +77,7 @@ class InventoryService
                         InventoryService::checkOrderIngredients($orderData, $attemptsCheckIngredients);
                     }
                 })
-                ->dispatch();
+                ->dispatchIf($needsPurchase);
         } catch (\Exception $e) {
             DB::rollBack();
             if (is_null(self::$queueBrokerService)) self::$queueBrokerService = new QueueBrokerService(new RabbitMQService());
