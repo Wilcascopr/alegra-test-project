@@ -81,3 +81,5 @@ El sistema se compone de tres microservicios:
 - Se implementan transacciones en la base de datos para garantizar la integridad de los datos.
 - Se utiliza long polling para evitar sobrecargar la plaza de mercado con peticiones constantes.
 - Se implementan mecanismos de reintento para manejar errores en la comunicación con el queue broker.
+
+### revisar rama after-review para ver los cambios realizados después de la revisión
