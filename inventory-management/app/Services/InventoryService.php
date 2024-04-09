@@ -7,6 +7,7 @@ use App\Models\Purchase;
 use App\Models\Ingredient;
 use Illuminate\Support\Facades\DB;
 use App\Jobs\PurchaseIngredientJob;
+use Illuminate\Support\Facades\Bus;
 
 class InventoryService
 {
@@ -47,13 +48,14 @@ class InventoryService
                 'id' => $order['id'],
                 'ingredients' => []
             ];
+            $jobsBatch = [];
             foreach ($ingredientsPurchase as $name => $item) {
                 $cookData['ingredients'][] = [
                     'id' => $item['id'],
                     'quantity' => $item['quantity_needed']
                 ];
                 $needsPurchase = $item['quantity_needed'] > $item['current_quantity'];
-                if ($needsPurchase) dispatch(new PurchaseIngredientJob([
+                if ($needsPurchase) array_push($jobsBatch, new PurchaseIngredientJob([
                         'id' => $item['id'],
                         'name' => $name,
                         'quantity' => abs($item['quantity_needed'] - $item['current_quantity']) * 2
@@ -65,11 +67,17 @@ class InventoryService
                 self::$queueBrokerService->publish(json_encode($cookData), RabbitMQService::INGREDIENTS_EXCHANGE_READY);
                 return;
             }
-            sleep(15);
-            if ($attemptsCheckIngredients < self::$maxAttemptsCheckIngredients) {
-                self::checkOrderIngredients($orderData, $attemptsCheckIngredients);
-                return;
-            }
+            Bus::batch($jobsBatch)
+                ->catch(function () use ($orderData) {
+                    if (is_null(InventoryService::$queueBrokerService)) InventoryService::$queueBrokerService = new QueueBrokerService(new RabbitMQService());
+                    InventoryService::$queueBrokerService->publish($orderData, RabbitMQService::INGREDIENTS_EXCHANGE_RETRY);
+                })
+                ->finally(function () use ($attemptsCheckIngredients, $orderData) {
+                    if ($attemptsCheckIngredients < InventoryService::$maxAttemptsCheckIngredients) {
+                        InventoryService::checkOrderIngredients($orderData, $attemptsCheckIngredients);
+                    }
+                })
+                ->dispatch();
         } catch (\Exception $e) {
             DB::rollBack();
             if (is_null(self::$queueBrokerService)) self::$queueBrokerService = new QueueBrokerService(new RabbitMQService());

@@ -4,12 +4,13 @@ namespace App\Jobs;
 
 use App\Models\Ingredient;
 use App\Models\Purchase;
+use Illuminate\Bus\Batchable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
 class PurchaseIngredientJob extends Job
 {
-
+    use Batchable;
     private $totalPurchased;
     private $data;
     private $storeUrl = 'https://recruitment.alegra.com/api/farmers-market/buy';

@@ -1,5 +1,3 @@
-version: '3.6'
-
 networks:
   rabbitmq-alegra:
     driver: bridge
@@ -14,23 +12,37 @@ services:
     volumes:
       - ./rabbit-init/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf # Custom RabbitMQ configuration
       - ./rabbit-init/definitions.json:/etc/rabbitmq/definitions.json # Custom RabbitMQ definitions
+  database:
+    image: 'mysql'
+    networks:
+      - rabbitmq-alegra
+    environment:
+      MYSQL_DATABASE: 'alegra-test'
+      MYSQL_ROOT_PASSWORD: 'Alegra1Test*Pass1'
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mysql-data:/var/lib/mysql
   gateway:
     build: ./gateway
     ports:
-      - "8080:80"
+      - "8000:80"
     networks:
       - rabbitmq-alegra
     depends_on:
       rabbitmq:
         condition: service_started
+      database:
+        condition: service_started
     environment:
       RABBITMQ_HOST: "rabbitmq"
       INVENTORY_SERVICE: "inventory"
       KITCHEN_SERVICE: "kitchen"
+      DB_HOST: "database"
   frontend:
     build: ./frontend
     ports:
-      - "3000:80"
+      - "8080:80"
     networks:
       - rabbitmq-alegra
     depends_on:
@@ -40,9 +52,8 @@ services:
         condition: service_started
       kitchen:
         condition: service_started
-    environment:
-      VITE_BACKEND_URL: "gateway"
-      VITE_BACKEND_PORT: "8080"
+      database:
+        condition: service_started
   inventory:
     build: ./inventory-management
     networks:
@@ -50,8 +61,11 @@ services:
     depends_on:
       rabbitmq:
         condition: service_started
+      database:
+        condition: service_started
     environment:
       RABBITMQ_HOST: "rabbitmq"
+      DB_HOST: "database"
   kitchen:
     build: ./kitchen
     networks:
@@ -59,5 +73,8 @@ services:
     depends_on:
       rabbitmq:
         condition: service_started
+      database:
+        condition: service_started
     environment:
       RABBITMQ_HOST: "rabbitmq"
+      DB_HOST: "database"
