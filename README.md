@@ -2,6 +2,9 @@
 
 URL de prueba: http://3.83.176.114
 
+### Esta versión de la prueba técnica contiene correcciones de errores y mejoras del manejo asíncrono de los jobs del inventario. 
+### (despues de la fecha de entrega, no se encuentra desplegado en la URL de prueba)
+
 ## Descripción
 
 Este proyecto implementa un sistema para un restaurante que dona platos gratis. El sistema permite al gerente realizar pedidos masivos de platos, gestionar el inventario de ingredientes y observar el historial de pedidos y compras.
