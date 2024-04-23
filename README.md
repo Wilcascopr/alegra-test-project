@@ -1,6 +1,6 @@
 # Prueba Técnica - Restaurante Solidario
 
-URL de prueba: http://3.83.176.114
+URL de prueba: http://3.83.176.114 (no disponible desde abril 19)
 
 ## Descripción
 
